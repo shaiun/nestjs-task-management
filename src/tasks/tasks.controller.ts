@@ -1,7 +1,20 @@
-import {Body, Controller, Delete, Get, Param, Patch, Post, Query} from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Param,
+    ParseIntPipe,
+    Patch,
+    Post,
+    Query,
+    UsePipes,
+    ValidationPipe
+} from '@nestjs/common';
 import {TasksService} from "./tasks.service";
-import {Task, TaskStatus} from "./task.model";
 import {CreateTaskDto} from "./dto/create-task.dto";
+import {Task} from "./task.entity";
+import {TaskStatus} from "./task-status.enum";
 import {GetTasksFilterDto} from "./dto/get-tasks-filter.dto";
 
 @Controller('tasks')
@@ -10,32 +23,29 @@ export class TasksController {
     }
 
     @Get()
-    getTasks(@Query() filterDto: GetTasksFilterDto): Task[] {
-        if (Object.keys(filterDto).length) {
-            return this.taskService.getTasksWithFilters(filterDto);
-        } else {
-            return this.taskService.getAllTasks();
-        }
+    getTasks(@Query() filterDto: GetTasksFilterDto): Promise<Task[]> {
+        return this.taskService.getTasks(filterDto);
     }
 
     @Get('/:id')
-    getTaskById(@Param('id') id: string): Task {
+    getTaskById(@Param('id', ParseIntPipe) id: number): Promise<Task> {
         return this.taskService.getTaskById(id);
     }
 
     @Post()
-    createTas(@Body() createTaskDto: CreateTaskDto): Task {
+    @UsePipes(ValidationPipe)
+    createTask(@Body() createTaskDto: CreateTaskDto): Promise<Task> {
         return this.taskService.createTask(createTaskDto);
     }
 
     @Delete('/:id')
-    deleteTask(@Param('id') id: string): void {
-        this.taskService.deleteTask(id);
+    deleteTask(@Param('id', ParseIntPipe) id: number): Promise<void> {
+        return this.taskService.deleteTask(id);
     }
 
     @Patch('/:id/status')
-    updateTaskStatus(@Param('id') id: string,
-                     @Body('status') status: TaskStatus) {
+    updateTaskStatus(@Param('id', ParseIntPipe) id: number,
+                     @Body('status') status: TaskStatus): Promise<Task> {
         return this.taskService.updateTaskStatus(id, status);
     }
 }
